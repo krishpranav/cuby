@@ -29,5 +29,58 @@ module Cuby
             attr_reader :args
 
             def arity
-
+                num = required_count
+                opt = optional_count
+                if required_keyword_count > 0
+                    num += 1
+                elsif optional_keyword_count > 0
+                    opt += 1
+                end
+                num = -num -1 if opt > 0 
+                num
             end
+
+            private
+
+            def splat_count 
+                args.count do |arg|
+                    arg.is_a?(::Prism::RestParameterNode) ||
+                        arg.is_a?(::Prism::KeywordRestParameterNode)
+                end
+            end
+
+            def required_count
+                args.count do |arg|
+                    arg.is_a?(::Prism::RequiredParameterNode) ||
+                        arg.is_a?(::Prism::MultiTargetNode)
+                end
+            end
+
+            def optional_count
+                splat_count + optional_named_count
+            end
+
+            def optional_named_count
+                return 0 if @is_proc
+
+                args.count do |arg|
+                    arg.is_a?(::Prism::OptionalParameterNode)
+                end
+            end
+
+            def required_keyword_count
+                args.count do |arg|
+                    arg.is_a?(::Prism::RequiredKeywordParameterNode)
+                end
+            end
+
+            def optional_keyword_count 
+                return 0 if @is_proc
+
+                args.count do |arg|
+                    arg.is_a?(::Prism::OptionalKeywordParameterNode)
+                end
+            end
+        end
+    end
+end
